@@ -170,8 +170,10 @@ export const ShareLyricsCardModal: React.FC<ShareLyricsCardModalProps> = ({
           >
             {/* Top Brand watermark */}
             <div className="flex items-center justify-between text-xs opacity-75 mb-4">
-              <div className="flex items-center gap-1.5">
-                <img src="/icon.svg" alt="logo" className="w-4 h-4" />
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 rounded-md bg-white p-0.5 overflow-hidden flex items-center justify-center shadow-sm">
+                  <img src="/app-logo.png" alt="logo" className="w-full h-full object-contain" />
+                </div>
                 <span className="font-extrabold tracking-tight text-white">Audio</span>
               </div>
               <span className="text-[10px] uppercase font-mono tracking-wider opacity-60">

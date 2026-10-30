@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { 
   X, Download, CheckCircle2, ShieldCheck, Smartphone, 
-  ExternalLink, Copy, Check, Sparkles, AlertCircle, QrCode
+  ExternalLink, Copy, Check, Sparkles, AlertCircle, QrCode,
+  Layers, RefreshCw, AlertTriangle
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { APK_VARIANTS } from '../data/mockCatalog';
@@ -20,12 +21,19 @@ export const ApkDownloadModal: React.FC<ApkDownloadModalProps> = ({
   isPwaInstallable,
 }) => {
   const [copiedSha, setCopiedSha] = useState<string | null>(null);
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [isBlobDownloading, setIsBlobDownloading] = useState(false);
   const [downloadStarted, setDownloadStarted] = useState(false);
   const [activeTab, setActiveTab] = useState<'apk' | 'pwa' | 'instructions'>('apk');
 
   if (!isOpen) return null;
 
-  const handleDownload = (apkUrl: string, name: string) => {
+  const currentUrl = typeof window !== 'undefined' ? window.location.origin : '';
+  const directApkUrl = `${currentUrl}/downloads/Audio-v4.3.1-universal.apk`;
+
+  const handleBlobDownload = async (apkUrl: string, name: string) => {
+    setIsBlobDownloading(true);
+    setDownloadStarted(true);
     confetti({
       particleCount: 80,
       spread: 70,
@@ -33,15 +41,24 @@ export const ApkDownloadModal: React.FC<ApkDownloadModalProps> = ({
       colors: ['#FF2A4D', '#ffffff', '#38bdf8', '#10b981'],
     });
 
-    setDownloadStarted(true);
-
-    // Create an invisible anchor tag to trigger download
-    const link = document.createElement('a');
-    link.href = apkUrl;
-    link.download = name;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+      const response = await fetch(apkUrl);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 10000);
+    } catch (err) {
+      console.warn('Fallback opening in new window:', err);
+      window.open(apkUrl, '_blank');
+    } finally {
+      setIsBlobDownloading(false);
+    }
   };
 
   const copyToClipboard = (text: string) => {
@@ -50,10 +67,14 @@ export const ApkDownloadModal: React.FC<ApkDownloadModalProps> = ({
     setTimeout(() => setCopiedSha(null), 2500);
   };
 
-  // Base URL for QR code
-  const currentUrl = typeof window !== 'undefined' ? window.location.origin : '';
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&bgcolor=050608&color=FF2A4D&margin=4&data=${encodeURIComponent(
-    `${currentUrl}/downloads/Audio-v4.3.1-universal.apk`
+  const copyDirectLink = () => {
+    navigator.clipboard.writeText(directApkUrl);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2500);
+  };
+
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&bgcolor=050608&color=ffffff&margin=5&data=${encodeURIComponent(
+    directApkUrl
   )}`;
 
   return (
@@ -65,15 +86,15 @@ export const ApkDownloadModal: React.FC<ApkDownloadModalProps> = ({
         {/* Header */}
         <div className="flex items-start justify-between pb-4 border-b border-white/10">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-[#FF2A4D] p-2 flex items-center justify-center shadow-[0_0_20px_rgba(255,42,77,0.4)]">
-              <img src="/icon.svg" alt="Audio" className="w-full h-full object-contain" />
+            <div className="w-12 h-12 rounded-2xl bg-white p-1.5 flex items-center justify-center shadow-[0_0_20px_rgba(255,42,77,0.4)] border border-white/20 overflow-hidden">
+              <img src="/app-logo.png" alt="Audio" className="w-full h-full object-contain" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">
                   Install Audio on Android
                 </h2>
-                <span className="bg-[#FF2A4D] text-black text-xs font-bold px-2 py-0.5 rounded-full">
+                <span className="bg-[#FF2A4D] text-white text-xs font-bold px-2 py-0.5 rounded-full">
                   v4.3.1
                 </span>
               </div>
@@ -90,13 +111,21 @@ export const ApkDownloadModal: React.FC<ApkDownloadModalProps> = ({
           </button>
         </div>
 
+        {/* Device Alert Notice */}
+        <div className="mt-4 p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-200 flex items-start gap-2.5">
+          <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+          <div className="space-y-0.5">
+            <span className="font-bold text-white">Android Security Notice:</span> If Chrome or your phone displays &quot;File might be harmful&quot; or &quot;Can&apos;t download file&quot;, tap <strong>&quot;Download anyway&quot;</strong>, or use our <strong>&quot;Backup Stream&quot;</strong> button below.
+          </div>
+        </div>
+
         {/* Modal Navigation Tabs */}
         <div className="flex items-center gap-2 mt-4 bg-zinc-900/60 p-1 rounded-xl border border-white/5">
           <button
             onClick={() => setActiveTab('apk')}
             className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
               activeTab === 'apk'
-                ? 'bg-[#FF2A4D] text-black shadow-md'
+                ? 'bg-[#FF2A4D] text-white shadow-md'
                 : 'text-zinc-400 hover:text-white'
             }`}
           >
@@ -106,21 +135,21 @@ export const ApkDownloadModal: React.FC<ApkDownloadModalProps> = ({
             onClick={() => setActiveTab('instructions')}
             className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
               activeTab === 'instructions'
-                ? 'bg-[#FF2A4D] text-black shadow-md'
+                ? 'bg-[#FF2A4D] text-white shadow-md'
                 : 'text-zinc-400 hover:text-white'
             }`}
           >
-            📋 How to Install (Guide)
+            📋 Fix &quot;Can&apos;t Download&quot; Guide
           </button>
           <button
             onClick={() => setActiveTab('pwa')}
             className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
               activeTab === 'pwa'
-                ? 'bg-[#FF2A4D] text-black shadow-md'
+                ? 'bg-[#FF2A4D] text-white shadow-md'
                 : 'text-zinc-400 hover:text-white'
             }`}
           >
-            ⚡ Instant WebAPK (PWA)
+            ⚡ Instant WebAPK (Zero APK)
           </button>
         </div>
 
@@ -129,11 +158,11 @@ export const ApkDownloadModal: React.FC<ApkDownloadModalProps> = ({
           <div className="mt-5 space-y-4">
             
             {/* Primary Recommended Card */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1a220e] to-[#12170b] border-2 border-[#FF2A4D]/40 p-5 shadow-[0_0_30px_rgba(255,42,77,0.15)]">
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#2a0e14] to-[#140609] border-2 border-[#FF2A4D]/40 p-5 shadow-[0_0_30px_rgba(255,42,77,0.15)]">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs uppercase font-extrabold tracking-wider px-2 py-0.5 rounded-full bg-[#FF2A4D] text-black">
+                    <span className="text-xs uppercase font-extrabold tracking-wider px-2 py-0.5 rounded-full bg-[#FF2A4D] text-white">
                       Recommended
                     </span>
                     <span className="text-xs text-zinc-400">Android 10 to 16+</span>
@@ -154,21 +183,44 @@ export const ApkDownloadModal: React.FC<ApkDownloadModalProps> = ({
                 </div>
 
                 <div className="flex flex-col w-full sm:w-auto gap-2">
-                  <button
-                    onClick={() => handleDownload('/downloads/Audio-v4.3.1-universal.apk', 'Audio-v4.3.1-universal.apk')}
-                    className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#FF2A4D] hover:bg-[#b5dc00] text-black font-extrabold text-sm shadow-[0_0_24px_rgba(255,42,77,0.4)] transition-all transform active:scale-95"
+                  {/* Direct Native Link */}
+                  <a
+                    href="/downloads/Audio-v4.3.1-universal.apk"
+                    download="Audio-v4.3.1-universal.apk"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => {
+                      confetti({
+                        particleCount: 80,
+                        spread: 70,
+                        origin: { y: 0.6 },
+                        colors: ['#FF2A4D', '#ffffff', '#38bdf8', '#10b981'],
+                      });
+                      setDownloadStarted(true);
+                    }}
+                    className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#FF2A4D] hover:bg-[#e0203e] text-white font-extrabold text-sm shadow-[0_0_24px_rgba(255,42,77,0.4)] transition-all transform active:scale-95 text-center"
                   >
                     <Download className="w-4 h-4 stroke-[2.5]" />
                     <span>Download APK (25 MB)</span>
+                  </a>
+
+                  {/* Fallback Blob Stream */}
+                  <button
+                    onClick={() => handleBlobDownload('/downloads/Audio-v4.3.1-universal.apk', 'Audio-v4.3.1-universal.apk')}
+                    disabled={isBlobDownloading}
+                    className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold text-zinc-200 transition-colors"
+                  >
+                    {isBlobDownloading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Layers className="w-3.5 h-3.5 text-[#FF2A4D]" />}
+                    <span>{isBlobDownloading ? 'Downloading Stream...' : 'Backup Direct Stream'}</span>
                   </button>
-                  <a
-                    href="https://github.com/Clash-Projects/Audio-Native/releases/download/4.3.1/Audio-v4.3.1-universal.apk"
-                    target="_blank"
-                    rel="noreferrer"
+
+                  <button
+                    onClick={copyDirectLink}
                     className="text-[11px] text-center text-zinc-400 hover:text-white flex items-center justify-center gap-1"
                   >
-                    GitHub Mirror <ExternalLink className="w-3 h-3" />
-                  </a>
+                    {copiedLink ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                    <span>{copiedLink ? 'Link Copied!' : 'Copy Direct Link'}</span>
+                  </button>
                 </div>
               </div>
 
@@ -206,20 +258,23 @@ export const ApkDownloadModal: React.FC<ApkDownloadModalProps> = ({
                       {variant.description}
                     </p>
                   </div>
-                  <button
-                    onClick={() => handleDownload(variant.downloadUrl, variant.name)}
+                  <a
+                    href={variant.downloadUrl}
+                    download={variant.name}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="mt-3 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs transition-colors"
                   >
                     <Download className="w-3.5 h-3.5" />
                     Download {variant.size}
-                  </button>
+                  </a>
                 </div>
               ))}
             </div>
 
             {/* QR Code Section for Phone Scan */}
             <div className="p-4 rounded-2xl bg-zinc-900/40 border border-white/5 flex flex-col sm:flex-row items-center gap-4">
-              <div className="w-28 h-28 rounded-xl bg-[#090c05] p-2 border border-[#FF2A4D]/30 shadow-inner flex items-center justify-center shrink-0">
+              <div className="w-28 h-28 rounded-xl bg-black p-2 border border-[#FF2A4D]/30 shadow-inner flex items-center justify-center shrink-0">
                 <img 
                   src={qrCodeUrl} 
                   alt="Scan QR code with Android phone" 
@@ -230,14 +285,14 @@ export const ApkDownloadModal: React.FC<ApkDownloadModalProps> = ({
                 <div className="flex items-center gap-2">
                   <QrCode className="w-4 h-4 text-[#FF2A4D]" />
                   <h4 className="text-sm font-bold text-white">
-                    Scan with Android Camera
+                    Scan with Android Camera to Download on Phone
                   </h4>
                 </div>
                 <p className="text-xs text-zinc-400 mt-1">
-                  Point your phone camera or QR scanner at the code to trigger the APK download directly on your mobile device.
+                  Point your phone camera or Google Lens at this code to trigger the APK download directly into your mobile browser.
                 </p>
                 <p className="text-[11px] text-zinc-500 mt-1">
-                  Works on all Android versions 7.0+ (Samsung One UI, Pixel, Xiaomi MIUI/HyperOS, OnePlus OxygenOS, etc.).
+                  Works on Samsung Galaxy, Google Pixel, Xiaomi, OnePlus, Motorola, and Oppo.
                 </p>
               </div>
             </div>
@@ -245,57 +300,67 @@ export const ApkDownloadModal: React.FC<ApkDownloadModalProps> = ({
           </div>
         )}
 
-        {/* Tab 2: Installation Step-by-Step Instructions */}
+        {/* Tab 2: Installation Step-by-Step Instructions & Fixes */}
         {activeTab === 'instructions' && (
           <div className="mt-5 space-y-4">
+            
+            <div className="p-4 rounded-2xl bg-[#FF2A4D]/10 border border-[#FF2A4D]/30 text-xs text-zinc-200">
+              <h4 className="text-sm font-bold text-white mb-1">
+                Why does Android say &quot;This app can not be downloaded&quot;?
+              </h4>
+              <p className="text-zinc-300 leading-relaxed">
+                Modern Android versions (Android 11, 12, 13, 14, 15) have strict security filters for APK files downloaded outside Google Play. Here is how to complete the download in 10 seconds:
+              </p>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               
               <div className="p-4 rounded-2xl bg-zinc-900/60 border border-white/10">
-                <div className="w-8 h-8 rounded-full bg-[#FF2A4D] text-black font-extrabold flex items-center justify-center text-sm mb-2">
+                <div className="w-8 h-8 rounded-full bg-[#FF2A4D] text-white font-extrabold flex items-center justify-center text-sm mb-2">
                   1
                 </div>
-                <h4 className="text-sm font-bold text-white">Download the APK file</h4>
+                <h4 className="text-sm font-bold text-white">Chrome: Tap &quot;Download anyway&quot;</h4>
                 <p className="text-xs text-zinc-400 mt-1">
-                  Tap <strong>Download APK</strong> above. Chrome or your browser may say <em>&quot;File might be harmful&quot;</em> — tap <strong>Download anyway</strong> (this is standard Android security for sideloaded open-source apps).
+                  When Chrome prompts with <em>&quot;File might be harmful&quot;</em>, tap <strong>Download anyway</strong>. If Chrome blocked it, open <strong>Chrome menu (3 dots) &rarr; Downloads &rarr; tap the warning &rarr; Keep</strong>.
                 </p>
               </div>
 
               <div className="p-4 rounded-2xl bg-zinc-900/60 border border-white/10">
-                <div className="w-8 h-8 rounded-full bg-[#FF2A4D] text-black font-extrabold flex items-center justify-center text-sm mb-2">
+                <div className="w-8 h-8 rounded-full bg-[#FF2A4D] text-white font-extrabold flex items-center justify-center text-sm mb-2">
                   2
                 </div>
-                <h4 className="text-sm font-bold text-white">Open the Downloaded APK</h4>
+                <h4 className="text-sm font-bold text-white">Open in System Files App</h4>
                 <p className="text-xs text-zinc-400 mt-1">
-                  Swipe down your notification shade or open your <strong>Files / Downloads</strong> app, then tap <code className="text-zinc-200">Audio-v4.3.1-universal.apk</code>.
+                  If the download notification doesn&apos;t open, open your device&apos;s <strong>Files</strong> or <strong>My Files (Samsung)</strong> app &rarr; go to <strong>Downloads</strong> &rarr; tap <code className="text-zinc-200">Audio-v4.3.1-universal.apk</code>.
                 </p>
               </div>
 
               <div className="p-4 rounded-2xl bg-zinc-900/60 border border-white/10">
-                <div className="w-8 h-8 rounded-full bg-[#FF2A4D] text-black font-extrabold flex items-center justify-center text-sm mb-2">
+                <div className="w-8 h-8 rounded-full bg-[#FF2A4D] text-white font-extrabold flex items-center justify-center text-sm mb-2">
                   3
                 </div>
                 <h4 className="text-sm font-bold text-white">Allow Unknown Apps</h4>
                 <p className="text-xs text-zinc-400 mt-1">
-                  If prompted with <em>&quot;Install unknown apps&quot;</em>, tap <strong>Settings</strong> and toggle on <strong>Allow from this source</strong> for Chrome or your File Manager.
+                  Android will ask: <em>&quot;Do you want to install this application?&quot;</em>. If it says blocked, tap <strong>Settings &rarr; toggle Allow from this source</strong> for Chrome or Files.
                 </p>
               </div>
 
               <div className="p-4 rounded-2xl bg-zinc-900/60 border border-white/10">
-                <div className="w-8 h-8 rounded-full bg-[#FF2A4D] text-black font-extrabold flex items-center justify-center text-sm mb-2">
+                <div className="w-8 h-8 rounded-full bg-[#FF2A4D] text-white font-extrabold flex items-center justify-center text-sm mb-2">
                   4
                 </div>
-                <h4 className="text-sm font-bold text-white">Tap Install & Launch</h4>
+                <h4 className="text-sm font-bold text-white">Play Protect Notice</h4>
                 <p className="text-xs text-zinc-400 mt-1">
-                  Return and tap <strong>Install</strong>. Once completed, tap <strong>Open</strong> to start streaming ad-free YouTube Music with real-time synced lyrics!
+                  If Google Play Protect displays <em>&quot;Unrecognized app&quot;</em>, tap <strong>More details &rarr; Install anyway</strong>. Audio is 100% open-source and virus-free.
                 </p>
               </div>
 
             </div>
 
-            <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-200 flex items-start gap-3">
-              <AlertCircle className="w-4 h-4 shrink-0 text-amber-400 mt-0.5" />
+            <div className="p-4 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-xs text-blue-200 flex items-start gap-3">
+              <Smartphone className="w-4 h-4 shrink-0 text-blue-400 mt-0.5" />
               <div>
-                <strong>Google Play Protect Notice:</strong> If Play Protect shows &quot;Unrecognized app&quot;, tap <em>More details</em> &gt; <em>Install anyway</em>. Audio is 100% open-source software built from verified source.
+                <strong>Alternative (No APK download required):</strong> Switch to the <strong>Instant WebAPK</strong> tab to add Audio directly to your home screen using Chrome. It runs offline, has a home screen icon, and requires zero APK permissions!
               </div>
             </div>
           </div>
@@ -306,19 +371,19 @@ export const ApkDownloadModal: React.FC<ApkDownloadModalProps> = ({
           <div className="mt-5 space-y-4">
             <div className="p-5 rounded-2xl bg-gradient-to-br from-zinc-900 to-zinc-950 border border-white/10 text-center">
               <div className="w-16 h-16 rounded-3xl bg-[#FF2A4D] p-3 mx-auto flex items-center justify-center shadow-[0_0_24px_rgba(255,42,77,0.35)]">
-                <Smartphone className="w-8 h-8 text-black" />
+                <Smartphone className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-lg font-bold text-white mt-3">
                 Zero-Download Android WebAPK
               </h3>
               <p className="text-xs text-zinc-300 mt-1.5 max-w-md mx-auto">
-                No need to manage APK files or permissions. Install Audio directly onto your phone&apos;s home screen via Chrome / Samsung Internet with full offline playback support!
+                Cannot download or install APK files due to phone restrictions? Install Audio instantly to your home screen with zero APK downloading or permissions needed!
               </p>
 
               <div className="mt-5 flex justify-center">
                 <button
                   onClick={onInstallPwa}
-                  className="flex items-center gap-2 px-6 py-3 rounded-xl bg-[#FF2A4D] hover:bg-[#E0203E] text-black font-extrabold text-sm shadow-[0_0_20px_rgba(255,42,77,0.35)] transition-all transform active:scale-95"
+                  className="flex items-center gap-2 px-6 py-3 rounded-xl bg-[#FF2A4D] hover:bg-[#E0203E] text-white font-extrabold text-sm shadow-[0_0_20px_rgba(255,42,77,0.35)] transition-all transform active:scale-95"
                 >
                   <Sparkles className="w-4 h-4" />
                   Install Web App to Home Screen
@@ -327,13 +392,13 @@ export const ApkDownloadModal: React.FC<ApkDownloadModalProps> = ({
 
               <div className="mt-4 pt-4 border-t border-white/10 text-left max-w-sm mx-auto text-xs text-zinc-400 space-y-1.5">
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Standalone fullscreen mode (no browser URL bar)
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Fullscreen standalone app without browser URL bar
                 </div>
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Offline cache &amp; background service worker
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Offline cache &amp; background audio playback
                 </div>
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Works on Android Chrome, Edge, and iOS Safari
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Works on any Android phone (Chrome, Samsung Internet, Edge)
                 </div>
               </div>
             </div>

@@ -1,12 +1,55 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
+import fs from 'fs';
 import path from 'path';
-import {defineConfig} from 'vite';
+import {defineConfig, Plugin} from 'vite';
 import {VitePWA} from 'vite-plugin-pwa';
+
+function apkMimePlugin(): Plugin {
+  const handler = (req: any, res: any, next: any) => {
+    const rawUrl = req.url || '';
+    const cleanUrl = rawUrl.split('?')[0];
+    if (cleanUrl.endsWith('.apk')) {
+      const publicPath = path.resolve(__dirname, 'public');
+      const filePath = path.join(publicPath, cleanUrl.startsWith('/') ? cleanUrl.slice(1) : cleanUrl);
+      
+      if (fs.existsSync(filePath)) {
+        const stat = fs.statSync(filePath);
+        const fileName = path.basename(filePath);
+        
+        res.writeHead(200, {
+          'Content-Type': 'application/vnd.android.package-archive',
+          'Content-Disposition': `attachment; filename="${fileName}"`,
+          'Content-Length': stat.size,
+          'Accept-Ranges': 'bytes',
+          'Cache-Control': 'public, max-age=86400',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Expose-Headers': 'Content-Disposition, Content-Length',
+        });
+        
+        const stream = fs.createReadStream(filePath);
+        stream.pipe(res);
+        return;
+      }
+    }
+    next();
+  };
+
+  return {
+    name: 'apk-mime-plugin',
+    configureServer(server) {
+      server.middlewares.use(handler);
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use(handler);
+    },
+  };
+}
 
 export default defineConfig(() => {
   return {
     plugins: [
+      apkMimePlugin(),
       react(),
       tailwindcss(),
       VitePWA({
@@ -14,11 +57,11 @@ export default defineConfig(() => {
         includeAssets: ['apple-touch-icon.png', 'icon.svg'],
         manifest: {
           id: '/',
-          name: 'LastWave Music',
-          short_name: 'LastWave',
-          description: 'Next-Gen YouTube Music Client with Smart Playlist Generator & Synced Lyrics',
-          theme_color: '#C6F100',
-          background_color: '#0b0e06',
+          name: 'Audio - Apple TV Music',
+          short_name: 'Audio',
+          description: 'High-fidelity music streaming client with Apple TV design, synced lyrics, and crossfade transitions',
+          theme_color: '#FF2A4D',
+          background_color: '#050608',
           display: 'standalone',
           start_url: '/',
           scope: '/',
@@ -63,3 +106,4 @@ export default defineConfig(() => {
     },
   };
 });
+

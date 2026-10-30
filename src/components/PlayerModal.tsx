@@ -423,8 +423,9 @@ export const PlayerModal: React.FC<PlayerModalProps> = ({
                 <div className="flex items-center justify-between pb-3 border-b border-white/10 text-xs text-zinc-400 shrink-0 z-20 bg-transparent">
                   <div className="flex items-center gap-3">
                     <span className="font-semibold text-white flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-[#FF2A4D] animate-ping" />
-                      Apple Music Real-Time Karaoke Sync
+                      <span className="w-2 h-2 rounded-full bg-[#FF2A4D] shadow-[0_0_8px_#FF2A4D] animate-ping" />
+                      <Sparkles className="w-3.5 h-3.5 text-[#FF2A4D]" />
+                      <span>Karaoke Luminous Glow Sync</span>
                     </span>
                     <button
                       onClick={() => {
@@ -461,7 +462,7 @@ export const PlayerModal: React.FC<PlayerModalProps> = ({
                   onWheel={handleUserInteraction}
                   onTouchMove={handleUserInteraction}
                   onPointerDown={handleUserInteraction}
-                  className="relative flex-1 overflow-y-auto space-y-8 px-3 scroll-smooth text-left no-scrollbar overscroll-contain"
+                  className="relative flex-1 overflow-y-auto space-y-9 px-4 scroll-smooth text-left no-scrollbar overscroll-contain"
                   style={{
                     maskImage: 'linear-gradient(to bottom, transparent 0%, black 14%, black 86%, transparent 100%)',
                     WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 14%, black 86%, transparent 100%)',
@@ -472,6 +473,7 @@ export const PlayerModal: React.FC<PlayerModalProps> = ({
                   {track.lyrics.map((line, idx) => {
                     const isActive = idx === activeLyricIndex;
                     const isPassed = idx < activeLyricIndex;
+                    const isNextImmediate = idx === activeLyricIndex + 1;
 
                     return (
                       <div 
@@ -481,47 +483,65 @@ export const PlayerModal: React.FC<PlayerModalProps> = ({
                           onSeek(line.time);
                           resumeAutoScroll();
                         }}
-                        className={`group cursor-pointer transition-all duration-500 py-2 rounded-2xl ${
+                        className={`relative group cursor-pointer lyric-line-transition py-3 px-3 rounded-3xl ${
                           isActive 
-                            ? 'text-white font-black scale-[1.03] opacity-100' 
+                            ? 'text-white font-black scale-[1.035] opacity-100 z-10' 
                             : isPassed
-                            ? 'text-zinc-400 font-bold opacity-30 hover:opacity-80 blur-[0.4px] hover:blur-none'
-                            : 'text-zinc-400 font-bold opacity-45 hover:opacity-85 blur-[0.4px] hover:blur-none'
+                            ? 'text-zinc-500 font-semibold opacity-30 hover:opacity-80 scale-[0.98] blur-[0.6px] hover:blur-none'
+                            : isNextImmediate
+                            ? 'text-zinc-300 font-bold opacity-60 hover:opacity-90 scale-[1.0] blur-[0.2px] hover:blur-none'
+                            : 'text-zinc-500 font-medium opacity-35 hover:opacity-80 scale-[0.98] blur-[0.5px] hover:blur-none'
                         }`}
                       >
+                        {/* Luminous Ambient Backdrop Glow for Active Line */}
+                        {isActive && (
+                          <div 
+                            className="absolute -inset-x-4 -inset-y-2 rounded-3xl bg-gradient-to-r from-[#FF2A4D]/25 via-rose-500/10 to-transparent blur-xl -z-10 animate-ambient-drift pointer-events-none"
+                            style={{
+                              boxShadow: '0 0 45px rgba(255, 42, 77, 0.25)',
+                            }}
+                          />
+                        )}
+
                         <div className="flex items-start justify-between gap-4">
-                          <p className={`text-xl sm:text-3xl lg:text-4xl tracking-tight leading-relaxed transition-all duration-300 ${
-                            isActive ? 'text-white drop-shadow-[0_0_28px_rgba(255,255,255,0.7)]' : ''
+                          <p className={`text-xl sm:text-3xl lg:text-4xl tracking-tight leading-relaxed lyric-line-transition ${
+                            isActive 
+                              ? 'text-white lyric-active-glow font-black drop-shadow-[0_0_24px_rgba(255,255,255,0.9)]' 
+                              : ''
                           }`}>
                             {line.text}
                           </p>
-                          <span className={`text-[11px] font-mono shrink-0 transition-opacity mt-2 ${
-                            isActive ? 'text-[#FF2A4D] opacity-100 font-bold' : 'text-zinc-600 opacity-0 group-hover:opacity-75'
+                          <span className={`text-[11px] font-mono shrink-0 lyric-line-transition mt-2 ${
+                            isActive 
+                              ? 'text-[#FF2A4D] opacity-100 font-bold drop-shadow-[0_0_10px_rgba(255,42,77,0.8)]' 
+                              : 'text-zinc-600 opacity-0 group-hover:opacity-75'
                           }`}>
                             {formatTime(line.time)}
                           </span>
                         </div>
 
-                        {/* Real-Time Intra-Line Karaoke Progress Fill */}
+                        {/* Real-Time Intra-Line Karaoke Glowing Progress Fill */}
                         {isActive && (
-                          <div className="w-full max-w-md h-1 bg-white/10 rounded-full mt-3 overflow-hidden shadow-inner">
+                          <div className="w-full max-w-md h-1.5 bg-white/10 rounded-full mt-3.5 overflow-hidden shadow-inner p-0.5">
                             <div 
-                              className="h-full bg-gradient-to-r from-[#FF2A4D] via-rose-300 to-[#FF2A4D] rounded-full transition-[width] duration-150 ease-linear shadow-[0_0_12px_#FF2A4D]"
+                              className="h-full bg-gradient-to-r from-[#FF2A4D] via-white to-[#FF2A4D] rounded-full transition-[width] duration-150 ease-linear shadow-[0_0_16px_#FF2A4D]"
                               style={{ width: `${intraLinePercent}%` }}
                             />
                           </div>
                         )}
 
                         {showTranslations && line.translation && (
-                          <p className={`text-xs sm:text-sm mt-1.5 font-normal transition-all ${
-                            isActive ? 'text-zinc-200 opacity-95 font-medium' : 'text-zinc-400 opacity-75'
+                          <p className={`text-xs sm:text-sm mt-2 font-normal lyric-line-transition ${
+                            isActive 
+                              ? 'text-zinc-100 opacity-95 font-medium drop-shadow-[0_0_12px_rgba(255,255,255,0.4)]' 
+                              : 'text-zinc-500 opacity-60'
                           }`}>
                             {line.translation}
                           </p>
                         )}
                         {showTranslations && line.romanization && (
-                          <p className={`text-[11px] mt-0.5 font-normal transition-all ${
-                            isActive ? 'text-zinc-300 opacity-80' : 'text-zinc-500 opacity-60'
+                          <p className={`text-[11px] mt-0.5 font-normal lyric-line-transition ${
+                            isActive ? 'text-zinc-300 opacity-80' : 'text-zinc-600 opacity-40'
                           }`}>
                             {line.romanization}
                           </p>

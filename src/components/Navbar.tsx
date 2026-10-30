@@ -34,11 +34,11 @@ export const Navbar: React.FC<NavbarProps> = ({
           onClick={() => setActiveTab('feed')}
           className="flex items-center gap-3 cursor-pointer group"
         >
-          <div className="w-9 h-9 rounded-2xl bg-[#FF2A4D] flex items-center justify-center p-1.5 shadow-[0_0_20px_rgba(255,42,77,0.5)] group-hover:scale-105 transition-transform duration-300">
+          <div className="w-9 h-9 rounded-2xl overflow-hidden flex items-center justify-center shadow-[0_0_20px_rgba(255,42,77,0.4)] border border-white/20 group-hover:scale-105 transition-transform duration-300 bg-white">
             <img 
-              src="/icon.svg" 
-              alt="Audio" 
-              className="w-full h-full object-contain invert brightness-0"
+              src="/app-logo.png" 
+              alt="Audio Logo" 
+              className="w-full h-full object-contain p-0.5"
             />
           </div>
           <div>

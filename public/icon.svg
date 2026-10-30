@@ -1,7 +1,25 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108" width="1024" height="1024">
-  <circle cx="54" cy="54" r="54" fill="#FF2A4D"/>
-  <path fill="#FFFFFF" d="M12.92,36.47 A5.99,5.99 0 0 1 24.89,36.47 L24.89,78.39 A5.99,5.99 0 0 1 12.92,78.39 Z" />
-  <path fill="#FFFFFF" d="M36.86,16.58 A6.14,6.14 0 0 1 49.15,16.58 L49.15,92.58 A6.14,6.14 0 0 1 36.86,92.58 Z" />
-  <path fill="#FFFFFF" d="M60.54,23.12 A6.25,6.25 0 0 1 73.04,23.12 L73.04,84.82 A6.25,6.25 0 0 1 60.54,84.82 Z" />
-  <path fill="#FFFFFF" d="M80.74,33.72 A6.72,6.72 0 0 1 94.18,33.72 L94.18,74.17 A6.72,6.72 0 0 1 80.74,74.17 Z" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF2A4D" />
+      <stop offset="100%" stop-color="#CC1835" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="128" fill="url(#bgGrad)" />
+  <!-- Beamed double musical note icon matching the uploaded picture -->
+  <g fill="#FFFFFF" filter="url(#shadow)">
+    <!-- Beam across top -->
+    <path d="M198 120 L360 84 C369 82 378 88 378 98 L378 144 C378 152 372 158 364 160 L202 196 C193 198 184 192 184 182 L184 136 C184 128 190 122 198 120 Z" />
+    <!-- Left stem -->
+    <rect x="184" y="132" width="28" height="230" rx="6" />
+    <!-- Right stem -->
+    <rect x="350" y="96" width="28" height="230" rx="6" />
+    <!-- Left notehead (rotated ellipse) -->
+    <ellipse cx="152" cy="362" rx="48" ry="34" transform="rotate(-25 152 362)" />
+    <!-- Right notehead (rotated ellipse) -->
+    <ellipse cx="318" cy="326" rx="48" ry="34" transform="rotate(-25 318 326)" />
+  </g>
 </svg>
