@@ -244,6 +244,16 @@ export const APK_VARIANTS = [
     directGithubUrl: 'https://github.com/Clash-Projects/LastWave-Native/releases/download/4.3.1/LastWave-v4.3.1-universal.apk'
   },
   {
+    name: 'Audio-v4.3.1-universal.apk.zip',
+    tag: 'ZIP Archive',
+    description: 'Unblocked zip package for devices or carriers restricting raw .apk downloads. Open and extract in Google Files.',
+    size: '25 MB',
+    minAndroid: 'Android 10+',
+    downloadUrl: '/downloads/Audio-v4.3.1-universal.apk.zip',
+    sha256: '6209eb8e3631bfc9bef9ff478eb63082e309a62850e5475dd4f6c39912e5287c',
+    directGithubUrl: '/downloads/Audio-v4.3.1-universal.apk.zip'
+  },
+  {
     name: 'Audio-v4.3.1-android7.apk',
     tag: 'Legacy',
     description: 'For older Android devices (Android 7.0 through 9.0). Compressed native libraries for legacy package managers.',

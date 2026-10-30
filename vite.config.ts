@@ -8,25 +8,68 @@ import {VitePWA} from 'vite-plugin-pwa';
 function apkMimePlugin(): Plugin {
   const handler = (req: any, res: any, next: any) => {
     const rawUrl = req.url || '';
-    const cleanUrl = rawUrl.split('?')[0];
-    if (cleanUrl.endsWith('.apk')) {
+    const [pathPart, queryPart] = rawUrl.split('?');
+    const params = new URLSearchParams(queryPart || '');
+
+    // 1. Dedicated API download route: /api/download/apk
+    if (pathPart === '/api/download/apk') {
+      const format = params.get('format') || 'apk';
+      const fileName = format === 'zip' ? 'Audio-v4.3.1-universal.apk.zip' : 'Audio-v4.3.1-universal.apk';
+      const filePath = path.resolve(__dirname, 'public/downloads', fileName);
+
+      if (fs.existsSync(filePath)) {
+        const stat = fs.statSync(filePath);
+        const mimeType = format === 'zip' ? 'application/zip' : 'application/vnd.android.package-archive';
+
+        res.writeHead(200, {
+          'Content-Type': mimeType,
+          'Content-Disposition': `attachment; filename="${fileName}"`,
+          'Content-Length': stat.size,
+          'Accept-Ranges': 'bytes',
+          'X-Content-Type-Options': 'nosniff',
+          'Cache-Control': 'public, max-age=3600',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Expose-Headers': 'Content-Disposition, Content-Length',
+        });
+
+        if (req.method === 'HEAD') {
+          res.end();
+          return;
+        }
+
+        const stream = fs.createReadStream(filePath);
+        stream.pipe(res);
+        return;
+      }
+    }
+
+    // 2. Direct static downloads under /downloads/*.apk or *.zip
+    const cleanUrl = pathPart;
+    if (cleanUrl.endsWith('.apk') || cleanUrl.endsWith('.zip')) {
       const publicPath = path.resolve(__dirname, 'public');
       const filePath = path.join(publicPath, cleanUrl.startsWith('/') ? cleanUrl.slice(1) : cleanUrl);
       
       if (fs.existsSync(filePath)) {
         const stat = fs.statSync(filePath);
         const fileName = path.basename(filePath);
+        const mimeType = fileName.endsWith('.zip') ? 'application/zip' : 'application/vnd.android.package-archive';
         
         res.writeHead(200, {
-          'Content-Type': 'application/vnd.android.package-archive',
+          'Content-Type': mimeType,
           'Content-Disposition': `attachment; filename="${fileName}"`,
           'Content-Length': stat.size,
           'Accept-Ranges': 'bytes',
+          'X-Content-Type-Options': 'nosniff',
           'Cache-Control': 'public, max-age=86400',
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Expose-Headers': 'Content-Disposition, Content-Length',
         });
         
+        if (req.method === 'HEAD') {
+          res.end();
+          return;
+        }
+
         const stream = fs.createReadStream(filePath);
         stream.pipe(res);
         return;

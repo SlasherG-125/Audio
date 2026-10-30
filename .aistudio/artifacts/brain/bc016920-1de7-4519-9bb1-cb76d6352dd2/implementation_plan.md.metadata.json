@@ -1,0 +1,6 @@
+{
+  "summary":  "Implementation plan to resolve Android 'Download blocked or file cannot be downloaded securely' error in Chrome and Google Files by adding direct HTTPS download headers, multi-transport download routes, APK ZIP package fallback, and explicit Google Files installation steps.",
+  "updatedAt":  "2026-10-30T16:47:09.672459898Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}
