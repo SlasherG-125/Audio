@@ -1,0 +1,6 @@
+{
+  "name": "Audio - High-Fidelity Music Player",
+  "description": "Audio is a high-fidelity music streaming client with Apple TV design, synced lyrics, crossfade audio transitions, persistent mini-player, and YouTube sync.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
